@@ -1,0 +1,14 @@
+{
+  "name": "rfq-skills",
+  "description": "Fastener RFQ tools: translate engineering drawings into Chinese and build supplier inquiry sheets (询价单)",
+  "owner": {
+    "name": "cwb-dev"
+  },
+  "plugins": [
+    {
+      "name": "rfq-tools",
+      "source": "./plugins/rfq-tools",
+      "description": "drawing-translate (图纸翻译, OCR) + supplier-rfq (询价单)"
+    }
+  ]
+}
