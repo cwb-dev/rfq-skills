@@ -16,6 +16,7 @@ from openpyxl.drawing.xdr import XDRPoint2D, XDRPositiveSize2D
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils.units import pixels_to_EMU
 from openpyxl.worksheet.hyperlink import Hyperlink
+from PIL import Image as PILImage
 
 XLSX, PDF, NOTES, IMGDIR = sys.argv[1:5]
 spec = json.load(open(NOTES, encoding="utf-8"))
@@ -92,6 +93,8 @@ for i, page in enumerate(pymupdf.open(PDF)):
     longest = max(page.rect.width, page.rect.height) / 72  # inches
     png = f"{IMGDIR}\\{SHEET}_p{i + 1}.png"
     page.get_pixmap(dpi=max(72, min(200, int(4500 / longest)))).save(png)  # ~4500 px long side
+    # drawings have few colours: a palette PNG is several times smaller than true colour
+    PILImage.open(png).convert("RGB").quantize(colors=64, method=PILImage.Quantize.MEDIANCUT).save(png, optimize=True)
     img = XLImage(png)
     w, h = DISPLAY_W, int(img.height * DISPLAY_W / img.width)
     img.width, img.height = w, h

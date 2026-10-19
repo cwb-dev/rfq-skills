@@ -1,6 +1,6 @@
 ---
 name: drawing-translate
-description: Translate a non-Chinese engineering drawing (PDF or image, including scans and faxes via OCR) into Chinese by writing the Chinese directly over the original words, on the drawing itself. Only callout text on arrow/leader labels in the part views and the separately listed NOTES are translated; dimensions, title block, revision table, tolerance block and all graphics stay untouched. Produces a new PDF, PNG previews and a review list of uncertain translations for a colleague to check. Use when the user says "translate this drawing", "把图纸翻译成中文", "图纸中文化", or when another skill needs a Chinese version of a drawing.
+description: Translate a non-Chinese engineering drawing (PDF or image, including scans and faxes via OCR) into Chinese by writing the Chinese directly over the original words, on the drawing itself. Only callout text on arrow/leader labels in the part views and the separately listed NOTES are translated; dimensions, title block, revision table, tolerance block and all graphics stay untouched. Produces a new PDF, PNG previews and a review list of uncertain translations for a colleague to check, and can add a red label (e.g. the inquiry line number) in a blank area. Use when the user says "translate this drawing", "把图纸翻译成中文", "图纸中文化", or when another skill needs a Chinese version of a drawing.
 ---
 
 # Drawing translation (图纸翻译成中文)
@@ -19,6 +19,7 @@ python ${CLAUDE_SKILL_DIR}/scripts/check_deps.py
   - `pymupdf`: required.
   - `rapidocr_onnxruntime`: OCR for scans, faxes and CAD text drawn as lines. About 100 MB with onnxruntime and opencv. Runs offline after install.
   - `openpyxl`: the review spreadsheet.
+  - `numpy`, `pillow`: the blank-area search for labels, and the pictures in spreadsheets.
 - Font: DengXian or SimHei from `C:\Windows\Fonts`. Without them, the PDF built-in CJK font is used.
 
 If `check_deps.py` reports something missing, tell the user and ask before installing: it downloads from PyPI.
@@ -29,6 +30,7 @@ If `check_deps.py` reports something missing, tell the user and ask before insta
   - `<source name>_中文.pdf`;
   - `<name>_中文_p<N>.png` previews at 200 dpi;
   - `<name>_中文_review.json` when some translations need a human check (see **Review**).
+  - optionally, a copy with a red label in a blank area (step 6), e.g. the inquiry line number for a 询价单.
 
   Never overwrite or change the source file.
 - **Work files** (lines.json, grid renders, translations.json) go in the scratchpad: `<scratchpad>\drawing-translate\<source name>\`.
@@ -135,7 +137,15 @@ When unsure whether a piece of text is a callout or part of the title block, lea
    - text too small to read (under about 6 pt).
 
    Fix the item and run step 4 again; it always starts from the untouched source.
-6. **Report** to the caller: the output path, what was translated, what was left in English and why, and the number of review items.
+6. **Label (optional, when the caller gives a label text).** Write a red framed label, e.g. `询价单序号 3｜图号 EX-2001-01`, into a blank area of every page:
+   ```
+   python ${CLAUDE_SKILL_DIR}/scripts/stamp.py <name>_中文.pdf <out dir>\<name>_中文.pdf --text "<label>"
+   ```
+   - It finds a box with clear space all round that touches no lines, text, table cell or highlight box. It uses the largest font from 18 pt down to 9 pt that fits, preferring the top right, then the top left.
+   - If no such box exists, the label goes in the top-right corner on a white background with a `WARN`. Check that page's preview.
+   - The output must be a different file from the input, so a re-run always stamps the clean translation. Write it to another folder under the same name.
+   - Re-render the preview of the stamped file and check that the label covers nothing.
+7. **Report** to the caller: the output path, what was translated, what was left in English and why, and the number of review items.
 
 ## Review (复查机制)
 Every translation that isn't certain goes on a review list for a colleague. When building translations.json, add `"review": "<short Chinese reason>"` to the item. For `rect` items, also add `"en": "<original text>"`. Mark an item for review when:

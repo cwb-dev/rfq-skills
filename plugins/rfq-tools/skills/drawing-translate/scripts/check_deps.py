@@ -9,9 +9,11 @@ import os
 import subprocess
 import sys
 
-PKGS = {"pymupdf": "pymupdf", "rapidocr_onnxruntime": "rapidocr_onnxruntime", "openpyxl": "openpyxl"}
+PKGS = {"pymupdf": "pymupdf", "rapidocr_onnxruntime": "rapidocr_onnxruntime", "openpyxl": "openpyxl",
+        "numpy": "numpy", "PIL": "pillow"}
 NEEDED = {"pymupdf": "required", "rapidocr_onnxruntime": "for scans / drawings without a text layer",
-          "openpyxl": "for the review spreadsheet"}
+          "openpyxl": "for the review spreadsheet", "numpy": "for stamp.py (blank-area search)",
+          "PIL": "for pictures in spreadsheets"}
 FONTS = [r"C:\Windows\Fonts\Deng.ttf", r"C:\Windows\Fonts\simhei.ttf"]  # same list as overlay.py
 MIRROR = "https://pypi.tuna.tsinghua.edu.cn/simple"
 

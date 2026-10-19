@@ -1,6 +1,6 @@
 ---
 name: supplier-rfq
-description: Split a collected client RFQ into Chinese 询价单 (supplier inquiry sheets) grouped by product category or factory, built on the 询价单-模板.xlsx template, with one drawing sheet per drawing number (the drawing with its callouts and notes translated into Chinese, plus plain-Chinese notes on what drives the price) and a review list of uncertain translations, ready to send to factories. Use when the user says "make 询价单 for RFQ 1234", "split this RFQ for suppliers", or "prepare supplier inquiry".
+description: Split a collected client RFQ into Chinese 询价单 (supplier inquiry sheets) grouped by product category or factory, built on the 询价单-模板.xlsx template, with one drawing sheet per drawing number (the drawing with its callouts and notes translated into Chinese, plus plain-Chinese notes on what drives the price), the drawings also placed under the table and notes on the 询价单 sheet with a red label giving each drawing's line numbers, and a review list of uncertain translations, ready to send to factories. Use when the user says "make 询价单 for RFQ 1234", "split this RFQ for suppliers", or "prepare supplier inquiry".
 ---
 
 # Supplier 询价单
@@ -63,23 +63,45 @@ Scripts: `${CLAUDE_SKILL_DIR}/scripts/` (this skill) and `${CLAUDE_PLUGIN_ROOT}/
       - Mark uncertain translations with `review`.
       - With many drawings, split them over a few parallel agents (about 6 drawings each). Tell each agent to follow drawing-translate's SKILL.md, to not edit its scripts, and to report review items.
       - A drawing with no callouts or notes is simply copied unchanged.
-   5. **Build the sheet** with the translated PDF by running:
+   5. **Label each translated drawing** with its line numbers on this 询价单, using step 6 of drawing-translate:
+      ```
+      python ${CLAUDE_PLUGIN_ROOT}/skills/drawing-translate/scripts/stamp.py <scratchpad>\translated\<name>_中文.pdf <scratchpad>\stamped\<name>_中文.pdf --text "询价单序号 3｜图号 EX-2001-01"
+      ```
+      - The number is the 序号 (row − 2) of every row with that drawing number, e.g. `询价单序号 7、8` for two quantity tiers.
+      - When one drawing serves several part numbers, list them all.
+      - A drawing used in two group files gets a separate stamped copy for each file.
+      - Specification-only documents, such as plating specs, get no label.
+      - Build the sheet from the stamped copy.
+   6. **Build the sheet** with the stamped PDF by running:
       ```
       python ${CLAUDE_SKILL_DIR}/scripts/add_drawing_sheet.py <询价单.xlsx> <translated _中文.pdf> <notes.json> <scratchpad img dir>
       ```
       - **Layout:** the script adds a sheet named by the drawing number, with the notes table on the left and every drawing page as a full image on the right. Set the notes `intro` to say the image is the Chinese-annotated version and dimensions and the title block stay in English.
       - **Link:** it links the drawing number on the 询价单 sheet to that sheet (an internal link, which works in Excel and WPS) and adds "图纸要求中文说明见 sheet「…」" to that row's 备注.
       - **Rewriting the row:** its `main` block can rewrite that row's 材质 / 表面处理 / 备注 to the same plain wording.
-      - **Re-running** replaces the sheet. After all sheets are in, run `python ${CLAUDE_SKILL_DIR}/scripts/fit_rows.py <all 询价单 xlsx>` to size the item rows.
-   6. **Close the file first.** If the xlsx is open in Excel or WPS, the save fails, so ask the user to close it. Hidden WPS `et.exe` processes can keep the lock after the window closes.
-   7. **Review list for a colleague.** Run:
+      - **Re-running** replaces the sheet.
+   7. **Finish each file** after all drawing sheets are in:
+      ```
+      python ${CLAUDE_SKILL_DIR}/scripts/fit_rows.py <all 询价单 xlsx>
+      python ${CLAUDE_SKILL_DIR}/scripts/place_drawings.py <all 询价单 xlsx>
+      ```
+      - `fit_rows.py` sizes the item rows.
+      - `place_drawings.py` puts every drawing on the 询价单 sheet under the 说明 block, in table order, so a factory sees the table, the notes and the drawings on one sheet.
+        - Each drawing gets a linked header row `图纸 n：<no>（询价单序号 …）` and starts a new printed page.
+        - Each page is fitted into a box as wide as columns A–K and at most 850 px tall, which is about one screen at 100 % zoom.
+        - The pictures are anchored "move and size with cells" over rows sized to fit. This is not Excel 365's "place in cell", which older WPS versions can't show.
+        - Pictures are stored at twice the display size as palette PNGs, so zooming in stays sharp and the file stays small.
+        - The script rebuilds the whole block on every run, so run it again after any change to a drawing sheet.
+      - In the 说明 notes, say that the drawings are under the notes, and that the red box on each drawing gives its 询价单序号.
+   8. **Close the file first.** If the xlsx is open in Excel or WPS, the save fails, so ask the user to close it. Hidden WPS `et.exe` processes can keep the lock after the window closes.
+   9. **Review list for a colleague.** Run:
       ```
       python ${CLAUDE_PLUGIN_ROOT}/skills/drawing-translate/scripts/collect_review.py <inquiry>\supplier_rfq\<no>_图纸翻译待审核.xlsx <scratchpad>\translated --title "<no> 图纸翻译"
       ```
       Tell the user how many items need review and the most important ones (e.g. NORMALIZE, unreadable or cut-off text, English left in the title block). The 询价单 should not go to factories before a colleague has checked this list.
 4. **Keep the client out of it.** Remove the client name, client PN prefixes if the user asks, and any target prices. Reference drawings by file name only. In the Chinese text, refer to end-customer specs only as 客户规范, never by company name. The drawing images themselves stay as received.
 5. **List** the drawings each factory needs from `drawings\`. These are the untouched originals, for factories that want the PDF. The sheets carry the Chinese-annotated images.
-6. **Write a short WeChat or email message** in Chinese for each factory, asking for 含税单价, 单重 and 交期, with a reply-by date. Use the same plain wording as the sheets, and point to the drawing sheets (图纸已标注中文). In the message file, note that the translation review list must be checked before sending.
+6. **Write a short WeChat or email message** in Chinese for each factory, asking for 含税单价, 单重 and 交期, with a reply-by date. Use the same plain wording as the sheets, and point to the drawings (图纸已标注中文，在询价单表格下方，红框为询价单序号). In the message file, note that the translation review list must be checked before sending.
 7. **If the project keeps an inquiry tracker** (e.g. `INQUIRY_LOG.md`), set the status to `sourcing` and note which factories received which groups.
 
 ## Factory language (applies to every Chinese text a factory sees)
