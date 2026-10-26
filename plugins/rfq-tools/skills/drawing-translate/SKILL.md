@@ -159,7 +159,7 @@ Every translation that isn't certain goes on a review list for a colleague. When
 ```
 python ${CLAUDE_SKILL_DIR}/scripts/collect_review.py <out.xlsx> <folder with *_review.json | review files…> --title "<job name>"
 ```
-It produces one row per item: drawing, page, original, translation, reason, plus yellow blank columns 审核意见 / 审核人. The calling skill decides where the xlsx goes (supplier-rfq puts it in `supplier_rfq\`). When called directly, put it next to the outputs and mention it in the report.
+It produces one row per item: drawing, page, original, translation, reason, plus yellow blank columns 审核意见 / 审核人. The calling skill decides where the xlsx goes (supplier-rfq puts it in the inquiry folder). When called directly, put it next to the outputs and mention it in the report.
 
 ## Notes
 - The output is a normal PDF: callers can render it to PNG, embed it, or send it as is.

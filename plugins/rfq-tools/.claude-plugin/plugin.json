@@ -1,6 +1,6 @@
 {
   "name": "rfq-tools",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Translate engineering drawings into Chinese on the drawing itself (with OCR for scans and a review list), and build Chinese supplier inquiry sheets (询价单) with drawing sheets.",
   "author": {
     "name": "cwb-dev"

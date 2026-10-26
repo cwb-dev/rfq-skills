@@ -5,7 +5,9 @@ description: Split a collected client RFQ into Chinese 询价单 (supplier inqui
 
 # Supplier 询价单
 
-Needs an inquiry folder with an item list, e.g. `items.md` (one line per item: part/drawing no., description, quantity, material, finish, drawing file), plus `drawings\` with the client drawings. If the project has a `CLAUDE.md` with folder or naming rules, read it first.
+Needs an inquiry folder with an item list, e.g. `items.md` (one line per item: part/drawing no., description, quantity, material, finish, drawing file), plus the client drawings. If the project has a `CLAUDE.md` with folder or naming rules, read it first.
+
+`<inquiry>` means the inquiry's folder. The client's drawings are in it, and the 询价单, the review list and the factory messages are written to it.
 
 Scripts: `${CLAUDE_SKILL_DIR}/scripts/` (this skill) and `${CLAUDE_PLUGIN_ROOT}/skills/drawing-translate/scripts/` (drawing translation). Run python without `-I` (packages are in the user site).
 
@@ -17,10 +19,10 @@ Scripts: `${CLAUDE_SKILL_DIR}/scripts/` (this skill) and `${CLAUDE_PLUGIN_ROOT}/
    - and/or by product type: 螺栓/螺钉, 螺母, 垫圈, 拉铆螺母, 木螺钉, 异型及特殊件 (special/drawing parts), 车加工件 (machined).
 
    Show the proposed grouping and ask which factory each group goes to. Use the project's supplier list if it has one.
-2. **Build one Excel file per group** from the template `${CLAUDE_SKILL_DIR}/templates/inquiry-template.xlsx`. Never edit the template itself. Name each file `supplier_rfq\<no>询价单-<group or factory>.xlsx`.
+2. **Build one Excel file per group** from the template `${CLAUDE_SKILL_DIR}/templates/inquiry-template.xlsx`. Never edit the template itself. Name each file `<inquiry>\<no>询价单-<group or factory>.xlsx`.
    - **The quick way:** write a groups JSON in the scratchpad (rows and notes, in the format given at the top of `build_rfq.py`) and run:
      ```
-     python ${CLAUDE_SKILL_DIR}/scripts/build_rfq.py <groups.json> <inquiry>\supplier_rfq <no>
+     python ${CLAUDE_SKILL_DIR}/scripts/build_rfq.py <groups.json> <inquiry> <no>
      ```
      It fills the template so its fonts, borders and yellow headers carry over, and applies the layout below.
    - **Row 1 (template header):** `A1:G1` merged `询价单` | `H1` 日期 | `I1` `=TODAY()` | `K1` price basis, e.g. `价格：人民币含税含运上海，元/千件`. Use `元/件` for large or machined parts priced per piece.
@@ -44,7 +46,7 @@ Scripts: `${CLAUDE_SKILL_DIR}/scripts/` (this skill) and `${CLAUDE_PLUGIN_ROOT}/
    - **Formatting:** wrap text, centre-align short columns and left-align C/E/F/K, size row heights to fit the text, freeze panes at `A3`, and print landscape at one page wide. Widen columns as needed (roughly B 18, C 30, E 26, F 36, K 42).
 
    Write material and finish in plain Chinese, the way a Chinese factory would say it (see **Factory language** below), not as a translation of the client's spec codes.
-3. **Add one drawing sheet per drawing number.** Do this for every line item whose drawing is in `drawings\`.
+3. **Add one drawing sheet per drawing number.** Do this for every line item whose drawing (PDF or image from the client) is in `<inquiry>`.
    1. **Read the whole drawing.** Render each PDF page with PyMuPDF. Zoom into the notes block, the title block and the dimension views until every note, tolerance and special-characteristic mark (SC / CC / diamond / shield symbols) can be read.
    2. **Check the standards behind it.** For each material or plating standard on the drawing, look up what it actually requires (web search), so you can state real values instead of the code.
    3. **Write a notes JSON** in the scratchpad, following `${CLAUDE_SKILL_DIR}/example_notes.json`. Sections run in this order, quote factors first:
@@ -58,8 +60,8 @@ Scripts: `${CLAUDE_SKILL_DIR}/scripts/` (this skill) and `${CLAUDE_PLUGIN_ROOT}/
       8. 其他: how to read the drawing, tooling marking, anything else.
 
       Mark an item `true` (red) when it affects price or production difficulty.
-   4. **Translate the drawing into Chinese** with the `drawing-translate` skill: follow its SKILL.md for every drawing in `drawings\`.
-      - Write the outputs to `<scratchpad>\translated\`, never into `drawings\`.
+   4. **Translate the drawing into Chinese** with the `drawing-translate` skill: follow its SKILL.md for every client drawing in `<inquiry>`.
+      - Write the outputs to `<scratchpad>\translated\`, never into `<inquiry>`, so the client's originals stay untouched and the inquiry folder doesn't fill with intermediate files.
       - Mark uncertain translations with `review`.
       - With many drawings, split them over a few parallel agents (about 6 drawings each). Tell each agent to follow drawing-translate's SKILL.md, to not edit its scripts, and to report review items.
       - A drawing with no callouts or notes is simply copied unchanged.
@@ -96,12 +98,12 @@ Scripts: `${CLAUDE_SKILL_DIR}/scripts/` (this skill) and `${CLAUDE_PLUGIN_ROOT}/
    8. **Close the file first.** If the xlsx is open in Excel or WPS, the save fails, so ask the user to close it. Hidden WPS `et.exe` processes can keep the lock after the window closes.
    9. **Review list for a colleague.** Run:
       ```
-      python ${CLAUDE_PLUGIN_ROOT}/skills/drawing-translate/scripts/collect_review.py <inquiry>\supplier_rfq\<no>_图纸翻译待审核.xlsx <scratchpad>\translated --title "<no> 图纸翻译"
+      python ${CLAUDE_PLUGIN_ROOT}/skills/drawing-translate/scripts/collect_review.py <inquiry>\<no>_图纸翻译待审核.xlsx <scratchpad>\translated --title "<no> 图纸翻译"
       ```
       Tell the user how many items need review and the most important ones (e.g. NORMALIZE, unreadable or cut-off text, English left in the title block). The 询价单 should not go to factories before a colleague has checked this list.
 4. **Keep the client out of it.** Remove the client name, client PN prefixes if the user asks, and any target prices. Reference drawings by file name only. In the Chinese text, refer to end-customer specs only as 客户规范, never by company name. The drawing images themselves stay as received.
-5. **List** the drawings each factory needs from `drawings\`. These are the untouched originals, for factories that want the PDF. The sheets carry the Chinese-annotated images.
-6. **Write a short WeChat or email message** in Chinese for each factory, asking for 含税单价, 单重 and 交期, with a reply-by date. Use the same plain wording as the sheets, and point to the drawings (图纸已标注中文，在询价单表格下方，红框为询价单序号). In the message file, note that the translation review list must be checked before sending.
+5. **List** the client drawings in `<inquiry>` that each factory needs. These are the untouched originals, for factories that want the PDF. The sheets carry the Chinese-annotated images.
+6. **Write a short WeChat or email message** in Chinese for each factory, asking for 含税单价, 单重 and 交期, with a reply-by date. Use the same plain wording as the sheets, and point to the drawings (图纸已标注中文，在询价单表格下方，红框为询价单序号). Save the messages as `<inquiry>\<no>_发厂家消息及图纸清单.md`, and note in that file that the translation review list must be checked before sending.
 7. **If the project keeps an inquiry tracker** (e.g. `INQUIRY_LOG.md`), set the status to `sourcing` and note which factories received which groups.
 
 ## Factory language (applies to every Chinese text a factory sees)
