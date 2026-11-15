@@ -1,6 +1,6 @@
 ---
 name: drawing-translate
-description: Translate a non-Chinese engineering drawing (PDF or image, including scans and faxes via OCR) into Chinese by writing the Chinese directly over the original words, on the drawing itself. Only callout text on arrow/leader labels in the part views and the separately listed NOTES are translated; dimensions, title block, revision table, tolerance block and all graphics stay untouched. Produces a new PDF, PNG previews and a review list of uncertain translations for a colleague to check, and can add a red label (e.g. the inquiry line number) in a blank area. Use when the user says "translate this drawing", "把图纸翻译成中文", "图纸中文化", or when another skill needs a Chinese version of a drawing.
+description: Translate a non-Chinese engineering drawing (PDF or image, including scans and faxes via OCR) into Chinese by writing the Chinese directly over the original words, on the drawing itself. Translate every requirement that can affect manufacturing, inspection, process, cost or quotation, including callouts, notes, dimension qualifiers, tolerances, material, finish, heat treatment and production-relevant title-block fields; numeric values, standard numbers and graphics stay unchanged. Produces a new PDF, PNG previews and a review list of uncertain translations for a colleague to check, and can add a red label (e.g. the inquiry line number) in a blank area. Use when the user says "translate this drawing", "把图纸翻译成中文", "图纸中文化", or when another skill needs a Chinese version of a drawing.
 ---
 
 # Drawing translation (图纸翻译成中文)
@@ -36,16 +36,18 @@ If `check_deps.py` reports something missing, tell the user and ask before insta
 - **Work files** (lines.json, grid renders, translations.json) go in the scratchpad: `<scratchpad>\drawing-translate\<source name>\`.
 
 ## What to translate
-**Translate only:**
-1. **Callouts in the part views.** These are words attached to an arrow or leader line that point at the part, e.g. `T20 TORX RECESS`, `10-32 TRI-LOBE`, `TYPE "CA" POINT`, `BELLEVILLE WASHER: …`, `KNURL`, `SECTION A-A`, `DETAIL C`.
-2. **The notes block.** This is the separately listed `NOTES:` / `NOTE:` section with its numbered notes, plus material/finish note blocks outside the title block, wherever they sit on the sheet.
+**Core principle: translate everything that can affect manufacturing, inspection, process, production cost or quotation.** Do not leave such information in English merely because it sits in a dimension, tolerance table, notes block or title block.
+
+1. **Part-view and process callouts:** arrow/leader labels, head/drive/thread/point requirements, machining and forming instructions, `T20 TORX RECESS`, `10-32 TRI-LOBE`, `TYPE "CA" POINT`, `KNURL`, `FULL THREAD`, `SECTION A-A`, `DETAIL C`.
+2. **All production notes and specifications:** material, finish, plating/coating/painting/adhesive/wax/passivation, heat treatment, hardness, salt spray, performance, welding, inspection, packaging, sampling, quality and change-control requirements.
+3. **Dimension and tolerance language:** translate the words without changing numbers or geometry: `MIN` → `最小`, `MAX` → `最大`, `REF` → `参考`, `TYP` → `典型`, `FULL THREAD` → `全螺纹`, `THK` → `厚度`, general-tolerance tables, units, `DO NOT SCALE`, critical-characteristic instructions and inspection notes.
+4. **Production-relevant title-block fields:** part description, MATERIAL, FINISH, HEAT TREATMENT, HARDNESS, units and similar fields. The factory must not need to interpret these English fields itself.
 
 **Leave as is:**
-- Dimensions and tolerances, including words that belong to a dimension such as `MIN`, `MAX`, `REF`, `TYP`, `R`, `Ø`, `DIA.`, `.015 MIN.R`.
-- The title block (part name, number, drawn by, scale, units, FINISH/MATERIAL fields inside it), the revision table, the tolerance block, `DO NOT SCALE`, zone letters and numbers, balloon numbers, confidentiality text, stamps, watermarks, fax headers.
-- All graphics. Remove words only.
+- Numeric dimensions, tolerances, thread designations, standard numbers, part numbers, revision letters, drawing numbers and all graphics. Translate their descriptive words only.
+- Purely administrative or non-production content such as drawn/checked by, dates, approval signatures, zone letters/numbers, confidentiality text, stamps, watermarks and fax headers. Revision history stays in English unless it changes the current production requirement; deleted/superseded instructions must not be carried into the current requirements.
 
-When unsure whether a piece of text is a callout or part of the title block, leave it in English and add a review note (see **Review**).
+When the English or its technical meaning is uncertain, still provide the best responsible Chinese translation on the drawing and mark it `review`; do not simply leave production/quotation information untranslated. Preserve the original source and make the uncertainty visible in the review list.
 
 ## Translation style
 - **Accurate and complete.** This is a translation, not a summary: keep every requirement, number, unit, standard name and code exactly as written (`IFI`, `ASTM B633`, `400°F`, `HRC 40-44`, `.007 MIN.`, `60 in.lbs`).
@@ -68,7 +70,7 @@ When unsure whether a piece of text is a callout or part of the title block, lea
   | CHAMFER | 倒角 |
   | UNDERCUT | 退刀槽 |
   | CASE HARDEN | 渗碳淬火 |
-  | BAKE | 烘烤（除氢） |
+  | BAKE | 镀后/除氢语境：除氢烘烤；涂装/胶粘语境：固化或烘烤 |
   | PLATE | 电镀 |
   | THREAD-FORMING | 自攻成型 |
   | O.D. | 外径 |
@@ -93,7 +95,7 @@ When unsure whether a piece of text is a callout or part of the title block, lea
    - **`--ocr`:** forces OCR on every page. Use it when the text layer exists but is offset from the drawn letters.
    - **Images and rotation:** an image input is wrapped into `<work_dir>\source.pdf`; use that file as the overlay source. Rotated pages are handled in the coordinates you see on screen.
 2. **Look at the whole drawing.** Read every `p<N>_grid.png` and zoom into the views and the notes block (render a clip with PyMuPDF at 300+ dpi) until each callout and note is legible.
-   - Decide which lines are callouts or notes, using the rules above.
+   - Identify every production-, inspection-, cost- and quotation-relevant line using the rules above, including dimension language, tolerance tables and title-block material/finish fields.
    - **OCR text can be wrong.** Always translate from what you read on the drawing, not from the OCR string. Use OCR only for the position.
    - **Check that each box covers the whole phrase.** OCR sometimes drops the first or last letters. If a box is short, use an explicit `rect` for that item.
    - Text that neither the text layer nor OCR found also gets a `rect` `[x0, y0, x1, y1]` in PDF points, read off the grid and checked zoomed in.
@@ -105,7 +107,7 @@ When unsure whether a piece of text is a callout or part of the title block, lea
       {"page": 0, "ids": [117, 118, 119], "zh": "注：\n1. ……\n2. ……"},
       {"page": 0, "rect": [330, 282, 395, 304], "en": "RECESS PENETRATION GAGING DEPTH", "zh": "槽通规\n插入深度", "size": 8},
       {"page": 0, "ids": [86], "zh": "除氢烘烤：按 …", "review": "原文 NORMALIZE，按镀后除氢理解"},
-      {"page": 0, "note": true, "en": "CASE HARDEN, ZINC, BAKE…", "zh": "", "review": "标题栏内的材料/表面处理，按规则未翻译"}
+      {"page": 0, "ids": [87], "en": "MATERIAL: STEEL", "zh": "材料：钢"}
     ]}
    ```
    - Use one item per callout and one item for the whole notes block (all its line ids together, so the Chinese reflows inside the original area).
@@ -153,7 +155,9 @@ Every translation that isn't certain goes on a review list for a colleague. When
 - a term has more than one possible meaning (NORMALIZE, DRIVER SIZE, LAST SCRATCH, FIRST SCRATCH);
 - you expanded an abbreviation (CRS, THK, CRN);
 - you copied an error in the original as is (wrong numbering, UNC on a fine thread, a typo);
-- you left English on purpose that the reader may still need (a material or finish line inside the title block). Add it as `{"note": true, "en": …, "review": …}`, which is listed but not drawn.
+- a production-relevant translation is uncertain. Put the best responsible Chinese translation on the drawing and list it for review; do not leave material, finish, dimensions, tolerances or process requirements in English just because they need confirmation. `note: true` is only for non-production administrative text or an illegible source that cannot be translated responsibly.
+
+Before delivery, every production-relevant review item must have a non-empty Chinese `zh` translation on the drawing. Pure numeric values, list markers and administrative fields are not untranslated review items. An empty `zh` is allowed only for an illegible source that needs manual reading.
 
 `overlay.py` writes them to `<out>_review.json`. To make the review spreadsheet for one or many drawings, run:
 ```

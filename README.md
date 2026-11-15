@@ -2,7 +2,7 @@
 
 Claude Code plugin with two skills for fastener / machined-part RFQs:
 
-- **drawing-translate**: translates a non-Chinese engineering drawing (PDF, image, scan or fax) into Chinese **on the drawing itself**. Only the arrow callouts and the NOTES are translated; dimensions, title block and graphics stay untouched. Scanned drawings are read with OCR. Uncertain translations go into a review spreadsheet (待审核清单) for a colleague to check.
+- **drawing-translate**: translates a non-Chinese engineering drawing (PDF, image, scan or fax) into Chinese **on the drawing itself**. Everything affecting manufacturing, inspection, process, cost or quotation is translated, including callouts, notes, dimension/tolerance language and title-block material/finish; numeric values, standard numbers and graphics stay unchanged. Scanned drawings are read with OCR. Uncertain translations go into a review spreadsheet (待审核清单) for a colleague to check.
 - **supplier-rfq**: splits a client RFQ into Chinese 询价单 for factories. One Excel file per product group, one sheet per drawing (the Chinese-annotated drawing plus plain-Chinese notes on what drives the price), and a WeChat/email message per factory.
 
 ## Install
