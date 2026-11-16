@@ -6,6 +6,7 @@ notes.json: see ../example_notes.json
 Re-running replaces the sheet, so edit the JSON and run again.
 """
 import json
+import os
 import sys
 
 import openpyxl
@@ -91,7 +92,7 @@ y = 10
 DISPLAY_W = 1500
 for i, page in enumerate(pymupdf.open(PDF)):
     longest = max(page.rect.width, page.rect.height) / 72  # inches
-    png = f"{IMGDIR}\\{SHEET}_p{i + 1}.png"
+    png = os.path.join(IMGDIR, f"{SHEET}_p{i + 1}.png")
     page.get_pixmap(dpi=max(72, min(200, int(4500 / longest)))).save(png)  # ~4500 px long side
     # drawings have few colours: a palette PNG is several times smaller than true colour
     PILImage.open(png).convert("RGB").quantize(colors=64, method=PILImage.Quantize.MEDIANCUT).save(png, optimize=True)

@@ -7,14 +7,14 @@ description: Translate a non-Chinese engineering drawing (PDF or image, includin
 
 Works on the drawing file only. It does not know about RFQs, 询价单 or clients, so any skill can call it with a file and get a Chinese file back.
 
-Scripts are in `${CLAUDE_SKILL_DIR}/scripts/`. Run python without `-I`, because the packages live in the user site.
+Scripts are in `skills/drawing-translate/scripts/` when using this repository. If the skill is installed elsewhere, replace `skills/drawing-translate` with the actual directory containing this `SKILL.md`. `<work>` below is a temporary working directory chosen by the caller. Angle-bracket tokens are path placeholders, not environment variables; quote paths containing spaces. Run python without `-I`, because the packages may live in the user site.
 
 ## Setup (once per machine)
 Run:
 ```
-python ${CLAUDE_SKILL_DIR}/scripts/check_deps.py
+python skills/drawing-translate/scripts/check_deps.py
 ```
-- If something is missing, run `python ${CLAUDE_SKILL_DIR}/scripts/check_deps.py --install`, or add `--cn` to install through the Tsinghua PyPI mirror (much faster in mainland China).
+- If something is missing, run `python skills/drawing-translate/scripts/check_deps.py --install`, or add `--cn` to install through the Tsinghua PyPI mirror (much faster in mainland China).
 - Packages:
   - `pymupdf`: required.
   - `rapidocr_onnxruntime`: OCR for scans, faxes and CAD text drawn as lines. About 100 MB with onnxruntime and opencv. Runs offline after install.
@@ -33,7 +33,7 @@ If `check_deps.py` reports something missing, tell the user and ask before insta
   - optionally, a copy with a red label in a blank area (step 6), e.g. the inquiry line number for a 询价单.
 
   Never overwrite or change the source file.
-- **Work files** (lines.json, grid renders, translations.json) go in the scratchpad: `<scratchpad>\drawing-translate\<source name>\`.
+- **Work files** (lines.json, grid renders, translations.json) go in a temporary work directory, for example `<work>/drawing-translate/<source name>/`. Do not use the source drawing's directory for intermediate files.
 
 ## What to translate
 **Core principle: translate everything that can affect manufacturing, inspection, process, production cost or quotation.** Do not leave such information in English merely because it sits in a dimension, tolerance table, notes block or title block.
@@ -85,7 +85,7 @@ When the English or its technical meaning is uncertain, still provide the best r
 ## Steps
 1. **Extract.** Run:
    ```
-   python ${CLAUDE_SKILL_DIR}/scripts/extract.py <drawing> <work_dir> [--ocr]
+   python skills/drawing-translate/scripts/extract.py <drawing> <work> [--ocr]
    ```
    - **What it writes:**
      - `lines.json`: every text line with id, page, bbox in PDF points, direction, size and text;
@@ -93,7 +93,7 @@ When the English or its technical meaning is uncertain, still provide the best r
    - **Text layer present:** lines come from the PDF text layer.
    - **No text layer** (fewer than 5 lines: scans, faxes, CAD text drawn as strokes): the page is OCR'd automatically. It takes two passes, a full page at 150 dpi plus 300 dpi tiles, and the lines carry `"ocr": true` and a confidence `score`.
    - **`--ocr`:** forces OCR on every page. Use it when the text layer exists but is offset from the drawn letters.
-   - **Images and rotation:** an image input is wrapped into `<work_dir>\source.pdf`; use that file as the overlay source. Rotated pages are handled in the coordinates you see on screen.
+   - **Images and rotation:** an image input is wrapped into `<work>/source.pdf`; use that file as the overlay source. Rotated pages are handled in the coordinates you see on screen.
 2. **Look at the whole drawing.** Read every `p<N>_grid.png` and zoom into the views and the notes block (render a clip with PyMuPDF at 300+ dpi) until each callout and note is legible.
    - Identify every production-, inspection-, cost- and quotation-relevant line using the rules above, including dimension language, tolerance tables and title-block material/finish fields.
    - **OCR text can be wrong.** Always translate from what you read on the drawing, not from the OCR string. Use OCR only for the position.
@@ -101,7 +101,7 @@ When the English or its technical meaning is uncertain, still provide the best r
    - Text that neither the text layer nor OCR found also gets a `rect` `[x0, y0, x1, y1]` in PDF points, read off the grid and checked zoomed in.
 3. **Write `translations.json`** in the work dir:
    ```json
-   {"lines": "<work_dir>\\lines.json",
+   {"lines": "<work>/lines.json",
     "items": [
       {"page": 0, "ids": [74, 75], "zh": "T20 梅花槽"},
       {"page": 0, "ids": [117, 118, 119], "zh": "注：\n1. ……\n2. ……"},
@@ -121,7 +121,7 @@ When the English or its technical meaning is uncertain, still provide the best r
      - `review`, `en`, `note`: see **Review**.
 4. **Overlay.** Run:
    ```
-   python ${CLAUDE_SKILL_DIR}/scripts/overlay.py <source.pdf> <translations.json> <out.pdf> <preview_dir>
+   python skills/drawing-translate/scripts/overlay.py <source.pdf> <translations.json> <out.pdf> <preview_dir>
    ```
    - **Text-layer `ids` items:**
      - The English glyphs are deleted (only through the middle of each line, so neighbouring lines stay). No fill is used, so boxes and leader lines crossing the area stay intact.
@@ -141,7 +141,7 @@ When the English or its technical meaning is uncertain, still provide the best r
    Fix the item and run step 4 again; it always starts from the untouched source.
 6. **Label (optional, when the caller gives a label text).** Write a red framed label, e.g. `询价单序号 3｜图号 EX-2001-01`, into a blank area of every page:
    ```
-   python ${CLAUDE_SKILL_DIR}/scripts/stamp.py <name>_中文.pdf <out dir>\<name>_中文.pdf --text "<label>"
+   python skills/drawing-translate/scripts/stamp.py <name>_中文.pdf <out_dir>/<name>_中文.pdf --text "<label>"
    ```
    - It finds a box with clear space all round that touches no lines, text, table cell or highlight box. It uses the largest font from 18 pt down to 9 pt that fits, preferring the top right, then the top left.
    - If no such box exists, the label goes in the top-right corner on a white background with a `WARN`. Check that page's preview.
@@ -161,7 +161,7 @@ Before delivery, every production-relevant review item must have a non-empty Chi
 
 `overlay.py` writes them to `<out>_review.json`. To make the review spreadsheet for one or many drawings, run:
 ```
-python ${CLAUDE_SKILL_DIR}/scripts/collect_review.py <out.xlsx> <folder with *_review.json | review files…> --title "<job name>"
+python skills/drawing-translate/scripts/collect_review.py <out.xlsx> <folder with *_review.json | review files…> --title "<job name>"
 ```
 It produces one row per item: drawing, page, original, translation, reason, plus yellow blank columns 审核意见 / 审核人. The calling skill decides where the xlsx goes (supplier-rfq puts it in the inquiry folder). When called directly, put it next to the outputs and mention it in the report.
 
