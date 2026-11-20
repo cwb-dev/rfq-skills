@@ -23,7 +23,7 @@ Spec (UTF-8 JSON):
   }],
   "contract_total_qty": 10,
   "expected_totals": {"qty": 10, "ctns": 10, "gross": 110, "net": 106, "cbm": 0.96},
-  "shipping_mark": "CMT\n26RSIT-RU-CMT-0010\nPALLET NO. 1",
+  "shipping_mark": "C.W.B.\nMADE IN CHINA",
   "shipping_mark_confirmed": true,
   "packing_summary": "10 CTNS",
   "notes": ["COUNTRY OF ORIGIN: CHINA."],
@@ -33,8 +33,9 @@ Spec (UTF-8 JSON):
 Quantity, qty_per_ctn and unit_weight use the units named above. gross/net are line totals;
 cbm is the total volume for that line, not the volume of one carton. If the source gives
 only a shipment-level volume, leave item cbm empty and set "total_cbm": 0.4128.
-Set the two confirmation flags only after the user explicitly confirms the pallet sequence
-and shipping mark. Item rows must be grouped and ordered by pallet_sequence.
+Set the two confirmation flags only after the user explicitly confirms the pallet numbers
+and shipping mark. PALLET NO. is sequential (1, 2, 3 ...) and item rows follow that order.
+Shipping Mark is independent content and must not be used to communicate package order.
 qty and expected_totals always contain actual packing-list values. contract_qty,
 contract_total_qty and quantity_warning_percent only produce reconciliation warnings.
 #>
@@ -64,6 +65,10 @@ $palletPositions = @{}
 for ($i=0; $i -lt $palletSequence.Count; $i++) {
   $key = [string]$palletSequence[$i]
   if ($palletPositions.ContainsKey($key)) { throw "duplicate pallet number in pallet_sequence: $key" }
+  if (-not ($palletSequence.Count -eq 1 -and $key -eq 'N/A')) {
+    $expected = [string]($i + 1)
+    if ($key -cne $expected) { throw "PALLET NO. must be sequential: 1, 2, 3 ...; found '$key' at position $($i+1). Do not use Shipping Mark to express order" }
+  }
   $palletPositions[$key] = $i
 }
 $lastPalletPosition = -1
