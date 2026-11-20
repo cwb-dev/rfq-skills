@@ -5,8 +5,8 @@ Model-independent skills for fastener and machined-part RFQs. The repository use
 - **drawing-translate**: translates a non-Chinese engineering drawing (PDF, image, scan or fax) into Chinese **on the drawing itself**. Everything affecting manufacturing, inspection, process, cost or quotation is translated, including callouts, notes, dimension/tolerance language and title-block material/finish; numeric values, standard numbers and graphics stay unchanged. Scanned drawings are read with OCR. Uncertain translations go into a review spreadsheet (待审核清单) for a colleague to check.
 - **supplier-rfq**: splits a client RFQ into Chinese 询价单 for factories. One Excel file per product group, one sheet per drawing (the Chinese-annotated drawing plus plain-Chinese notes on what drives the price), and a WeChat/email message per factory.
 - **proforma-invoice**: creates a Runsun (CNY/VTB) or CWB (USD/ANEXT) Proforma Invoice from the customer's order email, contract/PO and approved `Price to Client` values, with total validation and XLS/PDF output.
-- **commercial-invoice**: creates a Commercial Invoice from approved customer prices and final shipment evidence. Factory purchase prices must never be used as customer sales prices.
-- **packing-list**: creates a Packing List from the actual factory packing list, checking quantities, cartons, gross/net weights and CBM, with XLS/PDF output.
+- **commercial-invoice**: creates a Commercial Invoice from one or more customer PIs and final packing lists from one or more factories. A line-level PI/factory allocation is required, and factory purchase prices must never be used as customer sales prices.
+- **packing-list**: creates a Packing List from the actual factory packing list, checking quantities, cartons, gross/net weights and CBM. The user must explicitly confirm the physical pallet sequence and shipping mark before generation.
 
 ## Requirements
 
@@ -34,8 +34,8 @@ The five skills use the common `SKILL.md` layout and include `agent_created: tru
 Each invoice skill instructs the agent to give the user a short recommended workflow on its first invocation in a conversation:
 
 - **PI**: provide the customer's PI-request email, the corresponding calculation file's `Price to Client` data, and the customer contract/PO. The email fixes the ordered parts and quantities; approved contract terms take precedence over a quote.
-- **CI**: provide the final customer PI/sales contract, actual packing list and shipment details. Customer prices come from the customer documents, not the factory purchase contract.
-- **PL**: provide the actual factory packing list, matching customer PI/contract and shipment details. Missing weights or dimensions are obtained from the source rather than estimated.
+- **CI**: provide every customer PI/sales contract, every factory's actual packing list and the shipment details. The agent first prepares a line-level CI↔PI↔factory allocation. Customer prices come from the customer documents, not factory purchase contracts.
+- **PL**: provide the actual factory packing list, matching customer PI/contract and shipment details. Before generation, the agent shows the proposed physical pallet sequence and exact shipping-mark text for the user to mark, correct and explicitly confirm. Missing weights or dimensions are obtained from the source rather than estimated.
 
 The agent then confirms the inputs, generates XLS + PDF, renders the PDF and checks totals and layout. No skill sends email automatically.
 
