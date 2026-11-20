@@ -15,11 +15,13 @@ Spec (UTF-8 JSON):
   "qty_unit": "KPCS",
   "unit_weight_unit": "KGS/ KPCS",
   "qty_format": "#,##0.000",
+  "quantity_warning_percent": 5,
   "items": [{
     "pallet_no": "1", "product": "DIN 934", "description": "ZINC\nM10",
-    "qty": 10, "unit_weight": 10.6, "qty_per_ctn": 1, "ctns": 10,
+    "qty": 10, "contract_qty": 10, "unit_weight": 10.6, "qty_per_ctn": 1, "ctns": 10,
     "gross": 110, "net": 106, "measurement": "60 X 40 X 40", "cbm": 0.96
   }],
+  "contract_total_qty": 10,
   "expected_totals": {"qty": 10, "ctns": 10, "gross": 110, "net": 106, "cbm": 0.96},
   "shipping_mark": "CMT\n26RSIT-RU-CMT-0010\nPALLET NO. 1",
   "shipping_mark_confirmed": true,
@@ -33,6 +35,8 @@ cbm is the total volume for that line, not the volume of one carton. If the sour
 only a shipment-level volume, leave item cbm empty and set "total_cbm": 0.4128.
 Set the two confirmation flags only after the user explicitly confirms the pallet sequence
 and shipping mark. Item rows must be grouped and ordered by pallet_sequence.
+qty and expected_totals always contain actual packing-list values. contract_qty,
+contract_total_qty and quantity_warning_percent only produce reconciliation warnings.
 #>
 param([Parameter(Mandatory=$true)][string]$Spec, [switch]$Force)
 $ErrorActionPreference = 'Stop'
@@ -69,6 +73,22 @@ $n = $items.Count
 if ($n -lt 1) { throw 'no items' }
 $qtyUnit = $(if ($s.qty_unit) { [string]$s.qty_unit } else { 'KPCS' })
 $weightUnit = $(if ($s.unit_weight_unit) { [string]$s.unit_weight_unit } else { "KGS/ $qtyUnit" })
+$quantityWarningPercent = $(if ($null -ne $s.quantity_warning_percent) { [double]$s.quantity_warning_percent } else { 5.0 })
+if ($quantityWarningPercent -le 0) { throw 'quantity_warning_percent must be greater than zero' }
+$quantityWarnings = @()
+function Test-ContractQuantity([string]$label, [double]$actual, [double]$contract) {
+  $difference = $actual - $contract
+  if ([math]::Abs($difference) -le 0.0000001) { return }
+  if ([math]::Abs($contract) -le 0.0000001) {
+    $script:quantityWarnings += "$label actual=$actual $qtyUnit, contract=$contract $qtyUnit, difference=$difference; contract quantity is zero. Actual packing-list quantity retained"
+    return
+  }
+  $percent = ($difference / [math]::Abs($contract)) * 100
+  if ([math]::Abs($percent) -gt $quantityWarningPercent) {
+    $roundedPercent = [math]::Round($percent, 2)
+    $script:quantityWarnings += "$label actual=$actual $qtyUnit, contract=$contract $qtyUnit, difference=$difference ($roundedPercent%). Actual packing-list quantity retained"
+  }
+}
 $totalQty = 0.0; $totalCtns = 0.0; $totalGross = 0.0; $totalNet = 0.0; $totalCbm = 0.0
 $cbmIncomplete = $false
 for ($i=0; $i -lt $n; $i++) {
@@ -88,7 +108,9 @@ for ($i=0; $i -lt $n; $i++) {
   $totalGross += [double]$it.gross
   $totalNet += [double]$it.net
   if ($null -eq $it.cbm) { $cbmIncomplete = $true } else { $totalCbm += [double]$it.cbm }
+  if ($null -ne $it.contract_qty) { Test-ContractQuantity "items[$i]" ([double]$it.qty) ([double]$it.contract_qty) }
 }
+if ($null -ne $s.contract_total_qty) { Test-ContractQuantity 'TOTAL' $totalQty ([double]$s.contract_total_qty) }
 if ($null -ne $s.total_cbm) { $totalCbm = [double]$s.total_cbm }
 elseif ($cbmIncomplete) { throw 'item cbm values are missing and total_cbm was not supplied' }
 if ($s.expected_totals) {
@@ -247,6 +269,7 @@ try {
   $wb.SaveAs($xlsPath, 56)
   $wb.ExportAsFixedFormat(0, $pdfPath)
   $wb.Close($false)
+  foreach ($warning in $quantityWarnings) { "WARNING  $warning" }
   "OK  qty=$(Fmt $totalQty) $qtyUnit  ctns=$(Fmt $totalCtns)  gross=$(Fmt $totalGross) KG  net=$(Fmt $totalNet) KG  cbm=$(FmtCbm $totalCbm)  items=$n"
   "    $xlsPath"
   "    $pdfPath"

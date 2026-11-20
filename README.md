@@ -6,7 +6,7 @@ Model-independent skills for fastener and machined-part RFQs. The repository use
 - **supplier-rfq**: splits a client RFQ into Chinese 询价单 for factories. One Excel file per product group, one sheet per drawing (the Chinese-annotated drawing plus plain-Chinese notes on what drives the price), and a WeChat/email message per factory.
 - **proforma-invoice**: creates a Runsun (CNY/VTB) or CWB (USD/ANEXT) Proforma Invoice from the customer's order email, contract/PO and approved `Price to Client` values, with total validation and XLS/PDF output.
 - **commercial-invoice**: creates a Commercial Invoice from one or more customer PIs and final packing lists from one or more factories. A line-level PI/factory allocation is required, and factory purchase prices must never be used as customer sales prices.
-- **packing-list**: creates a Packing List from the actual factory packing list, checking quantities, cartons, gross/net weights and CBM. The user must explicitly confirm the physical pallet sequence and shipping mark before generation.
+- **packing-list**: creates a Packing List governed by actual factory packing-list quantities; contracts are comparison references only. Quantity variance over 5% by default produces a user-facing warning without changing actual values. The user must explicitly confirm the physical pallet sequence and shipping mark before generation.
 
 ## Requirements
 
@@ -35,7 +35,7 @@ Each invoice skill instructs the agent to give the user a short recommended work
 
 - **PI**: provide the customer's PI-request email, the corresponding calculation file's `Price to Client` data, and the customer contract/PO. The email fixes the ordered parts and quantities; approved contract terms take precedence over a quote.
 - **CI**: provide every customer PI/sales contract, every factory's actual packing list and the shipment details. The agent first prepares a line-level CI↔PI↔factory allocation. Customer prices come from the customer documents, not factory purchase contracts.
-- **PL**: provide the actual factory packing list, matching customer PI/contract and shipment details. Before generation, the agent shows the proposed physical pallet sequence and exact shipping-mark text for the user to mark, correct and explicitly confirm. Missing weights or dimensions are obtained from the source rather than estimated.
+- **PL**: provide the actual factory packing list, matching customer PI/contract and shipment details. Actual packing-list quantities always govern; contract quantities are references only, and variance over 5% by default is reported to the user without altering the PL. Before generation, the agent shows the proposed physical pallet sequence and exact shipping-mark text for the user to mark, correct and explicitly confirm. Missing weights or dimensions are obtained from the source rather than estimated.
 
 The agent then confirms the inputs, generates XLS + PDF, renders the PDF and checks totals and layout. No skill sends email automatically.
 
