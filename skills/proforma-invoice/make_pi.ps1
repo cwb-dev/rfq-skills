@@ -7,10 +7,10 @@ Spec (UTF-8 JSON):
 {
   "seller": "runsun" | "cwb",            // runsun = Runsun Industrial (Shanghai, VTB, CNY)
                                           // cwb    = CWB Industrial Pte (Singapore, ANEXT, USD)
-  "no": "RSIT-GSM-26-001",
+  "no": "RSIT-ABC-26-001",
   "date": "2026/10/19",
-  "buyer": ["OJSC GOMSELMASH", "41 SHOSSEYNAYA STR.", "246004 GOMEL, BELARUS"],
-  "refs": [["CONTRACT NO.:", "1750/308-2026"]],   // optional, up to 3 label/value pairs under NO/DATE
+  "buyer": ["EXAMPLE BUYER LLC", "1 EXAMPLE STREET", "EXAMPLE CITY, COUNTRY"],
+  "refs": [["CONTRACT NO.:", "EXAMPLE-001"]],      // optional, up to 3 label/value pairs under NO/DATE
   "incoterm": "FCA SHANGHAI",
   "currency": "CNY",
   "qty_unit": "MPCS", "price_unit": "CNY/MPCS",
@@ -18,9 +18,9 @@ Spec (UTF-8 JSON):
   "qty_format": "#,##0", "price_format": "#,##0.00",   // optional Excel number formats
   "items": [ {"product": "...", "description": "...", "qty": 200, "price": 160, "weight": 7.5} ],
   "notes": ["PAYMENT: ...", "DELIVERY: ..."],          // numbered automatically
-  "buyer_sign_name": "OJSC GOMSELMASH",                // printed above the buyer signature line
+  "buyer_sign_name": "EXAMPLE BUYER LLC",                // printed above the buyer signature line
   "say_total": true,                                   // amount in words under TOTAL
-  "out_dir": "F:\\Claude\\<Client>\\<order>\\<no>"
+  "out_dir": "./output"
 }
 #>
 param([Parameter(Mandatory=$true)][string]$Spec, [switch]$Force)

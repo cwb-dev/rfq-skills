@@ -49,9 +49,9 @@ A CI may combine several customer PIs and packing lists from several factories. 
 
 ## Numbering
 
-Normal CI numbers are `<YY>RSIT-<country>-<CLIENT>-<NNNN>`, one per shipment/customs declaration, for example `26RSIT-RU-CMT-0010`. Existing shipment documents are under `Y:/出货文件/出货单据/<Client>/`. List only the relevant client folder. A PI can ship across several CIs and one CI can cover several PIs.
+Normal CI numbers are `<YY>RSIT-<country>-<CLIENT>-<NNNN>`, one per shipment/customs declaration, for example `26RSIT-XX-ABC-0001`. Read the existing shipment archive root from the private workspace configuration and list only the relevant client folder. A PI can ship across several CIs and one CI can cover several PIs.
 
-For an isolated test, use a number such as `TEST-CI-26RSIT-RU-CMT-0009` rather than a formal CI number.
+For an isolated test, use a number such as `TEST-CI-26RSIT-XX-ABC-0001` rather than a formal CI number.
 
 ## Steps
 

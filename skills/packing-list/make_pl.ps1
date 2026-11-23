@@ -6,10 +6,10 @@ Fill a packing-list template from a JSON spec and save <invoice_no>.xls + <invoi
 Spec (UTF-8 JSON):
 {
   "seller": "runsun" | "cwb",
-  "invoice_no": "26RSIT-RU-CMT-0010",
+  "invoice_no": "26RSIT-XX-ABC-0001",
   "date": "2026/11/20",
-  "buyer": ["CENTER OF HARDWARE TECHNOLOGIES LLC", "188693, Russia, ..."],
-  "refs": [["PI NO.:", "RSIT-CMT-26-016"]],
+  "buyer": ["EXAMPLE BUYER LLC", "1 EXAMPLE STREET, EXAMPLE CITY, COUNTRY"],
+  "refs": [["PI NO.:", "RSIT-ABC-26-001"]],
   "pallet_sequence": ["1"],
   "pallet_sequence_confirmed": true,
   "qty_unit": "KPCS",
@@ -27,7 +27,7 @@ Spec (UTF-8 JSON):
   "shipping_mark_confirmed": true,
   "packing_summary": "10 CTNS",
   "notes": ["COUNTRY OF ORIGIN: CHINA."],
-  "out_dir": "F:/Claude/<test-or-shipment-folder>"
+  "out_dir": "./output"
 }
 
 Quantity, qty_per_ctn and unit_weight use the units named above. gross/net are line totals;

@@ -6,10 +6,10 @@ Fill a commercial-invoice template from a JSON spec and save <no>.xls + <no>.pdf
 Spec (UTF-8 JSON):
 {
   "seller": "runsun" | "cwb",
-  "no": "26RSIT-RU-CMT-0010",
+  "no": "26RSIT-XX-ABC-0001",
   "date": "2026/11/20",
-  "buyer": ["CENTER OF HARDWARE TECHNOLOGIES LLC", "188693, Russia, ..."],
-  "refs": [["PI NO.:", "RSIT-CMT-26-016"], ["CONTRACT NO.:", "0904"]],
+  "buyer": ["EXAMPLE BUYER LLC", "1 EXAMPLE STREET, EXAMPLE CITY, COUNTRY"],
+  "refs": [["PI NO.:", "RSIT-ABC-26-001"], ["CONTRACT NO.:", "EXAMPLE-001"]],
   "incoterm": "FOB SHANGHAI",
   "currency": "CNY",
   "qty_unit": "MPCS", "price_unit": "CNY/MPCS",
@@ -18,9 +18,9 @@ Spec (UTF-8 JSON):
   "items": [{"product": "DIN 934", "description": "ZINC\nM10", "qty": 10, "price": 100, "weight": 10.6}],
   "expected_total": 1000,
   "notes": ["PAYMENT: ...", "COUNTRY OF ORIGIN: CHINA."],
-  "buyer_sign_name": "CENTER OF HARDWARE TECHNOLOGIES LLC",
+  "buyer_sign_name": "EXAMPLE BUYER LLC",
   "say_total": true,
-  "out_dir": "F:/Claude/<test-or-order-folder>"
+  "out_dir": "./output"
 }
 #>
 param([Parameter(Mandatory=$true)][string]$Spec, [switch]$Force)

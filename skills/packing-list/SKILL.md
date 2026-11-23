@@ -33,7 +33,7 @@ Use the same seller and buyer as the matching CI. Never edit a template for an i
 - Preserve the source values for quantity, unit weight, quantity per carton, carton count, gross/net weight and carton dimensions. Do not estimate missing weights or dimensions.
 - `qty` and `qty_per_ctn` use `qty_unit`; `unit_weight` uses `unit_weight_unit`. For example, with `KPCS`, a quantity of 10 means 10,000 pieces and unit weight is kg per 1,000 pieces.
 - `gross` and `net` are totals for the whole line. When available, item `cbm` is the total volume for that line, not one carton's volume. If the source provides only a shipment-level volume, leave item `cbm` empty and set `total_cbm`; do not distribute the total arbitrarily across lines. Calculate volume only when the source dimensions and package count support that calculation.
-- Gross weight must not be below net weight. Apply client-specific rules: for CMT, gross and net weights must differ and CI/PL quantities must match the PI exactly.
+- Gross weight must not be below net weight. Apply any additional client-specific rules from the private client profile.
 - Keep CI and PL product order, descriptions, quantities and references consistent. Reconcile partial shipments and combined PIs line by line.
 
 ## Actual quantities govern; contracts are references only
@@ -59,7 +59,7 @@ The user confirms the final pallet numbers and shipping mark. These are separate
 
 ## Numbering
 
-The PL normally uses the matching CI number `<YY>RSIT-<country>-<CLIENT>-<NNNN>`. For an isolated test, use a number such as `TEST-PL-26RSIT-RU-CMT-0009` and write only to a separate test folder.
+The PL normally uses the matching CI number `<YY>RSIT-<country>-<CLIENT>-<NNNN>`. For an isolated test, use a number such as `TEST-PL-26RSIT-XX-ABC-0001` and write only to a separate test folder.
 
 ## Steps
 

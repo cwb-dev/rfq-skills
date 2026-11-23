@@ -22,18 +22,18 @@ On the first invocation in a conversation, tell the user in their language befor
 | `seller` | Company | Bank | Currency | Use for |
 |---|---|---|---|---|
 | `runsun` | RUNSUN INDUSTRIAL TECHNOLOGY CO., LTD (Shanghai) | VTB Bank (PJSC) Shanghai Branch, corr. VTB Moscow | CNY | Russia / Belarus clients, and any contract signed by Runsun |
-| `cwb` | CWB INDUSTRIAL PTE. LTD. (Singapore) | ANEXT Bank, intermediary JP Morgan | USD | Tornexpress/FSM and other USD clients |
+| `cwb` | CWB INDUSTRIAL PTE. LTD. (Singapore) | ANEXT Bank, intermediary JP Morgan | USD | Contracts signed by CWB, normally USD orders |
 
 The seller on the PI **must be the party named in the contract/PO**, since the bank checks that the PI, contract and beneficiary match.
 
 Templates are `<skill dir>\templates\PI-RUNSUN.xls` and `PI-CWB.xls` (logo, letterhead and bank block are already in them). Never edit them by hand for one order; everything order-specific goes in the spec.
 
 ## Numbering
-`RSIT-<CODE>-<YY>-<NNN>`, one sequence **per client** per year. Existing PIs live on the shared drive `Y:\外贸合同\<YYYY>年上海如榫外销合同\<Client>\<PI no>\` (read-only for this skill; it is a slow network drive, so list only the one client folder). Next number = highest existing for that client + 1; a new client starts at 001. Known codes: FSM (Fastener Service de Mexico / Tornexpress), TKM (TK Mash), VKT (VK Telecom), WUT (Wuxi United Tools), TUR (Turbo Don), GSM (Gomselmash). For a new client, ask the user for the 3-letter code.
+`RSIT-<CODE>-<YY>-<NNN>`, one sequence **per client** per year. Read the sales archive root and each client's existing folder/code convention from the private workspace configuration. Next number = highest existing for that client + 1; a new client starts at 001. Ask the user for a new client's three-letter code.
 
 ## Steps
 1. **Collect the facts** from the contract/specification or PO, not from memory: buyer legal name + address (in English), contract/PO no. and date, every line (product, description, qty, unit price), Incoterm and place, payment terms, delivery time. If a quote and the contract differ, the **contract wins** (e.g. lots not awarded are left out). State coating/finish the way the contract does.
-2. **Write the spec JSON** next to the order, `<order folder>\<PI no>\pi_spec.json` (format at the top of `make_pi.ps1`; example: `Gomselmash\Nuts Order\RSIT-GSM-26-001\pi_spec.json`).
+2. **Write the spec JSON** next to the order, `<order folder>/<PI no>/pi_spec.json` (format at the top of `make_pi.ps1`).
    - `buyer`: up to 3 lines (runsun) or 4 lines (cwb).
    - `refs`: up to 2-3 label/value pairs printed under NO/DATE (contract no., contract date, PO no.). Keep to 2 on runsun so they don't crowd the AMOUNT header; put anything else in a note.
    - Units: use the contract's units. Runsun/CNY orders (Russia/Belarus) use the Russian unit format `"qty_unit": "MPCS"`, `"price_unit": "CNY/MPCS"` (MPCS = 1000 pcs); CWB/USD orders `PCS` and `USD/PC` with `"price_format": "\"$\"#,##0.00000"`.
@@ -47,8 +47,8 @@ Templates are `<skill dir>\templates\PI-RUNSUN.xls` and `PI-CWB.xls` (logo, lett
    It fills the template via Excel, inserts item/note rows as needed, writes ROUND(price×qty) formulas, adds "SAY TOTAL" in words, checks the sheet total against the spec, and saves `<PI no>.xls` + `<PI no>.pdf` in `out_dir`. It refuses to overwrite without `-Force`.
    - If Excel hangs or reports "busy" (0x800AC472), a hidden headless instance is stuck on a dialog: check `Get-CimInstance Win32_Process -Filter "Name='EXCEL.EXE'"` and stop only processes whose command line has `/automation -Embedding` (those were started by scripts, not the user).
 4. **Check the PDF**: render page 1 with PyMuPDF and look at it. One page, totals match the contract, no clipped text in item rows, refs not touching the table header.
-5. **Copy to the archive** `Y:\外贸合同\...\<Client>\<PI no>\` only if the user says so.
-6. **Covering email**: a 263 **draft** only (never send) with `save_draft` (account `yhe`), replying to the client's latest mail on the order in their language, with the PDF attached by full path (threading and To/CC as in **Mail (263 IMAP)** in `CLAUDE.md`). When the client must sign the PI back, say why (e.g. the bank needs the signed PI as a supporting document to credit the payment).
+5. **Copy to the configured sales archive** only if the user says so.
+6. **Covering email**: create a **draft only** (never send) with the privately configured mail account, replying to the client's latest mail in their language and attaching the PDF by full path. Follow the private workspace rules for threading and To/CC. When the client must sign the PI back, say why.
 
 ## Notes
 - The templates carry no signature stamp (removed in the 2026-11 redesign); the seller signs/stamps after printing if needed. The buyer signs and returns.

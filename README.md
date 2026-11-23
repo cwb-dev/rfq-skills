@@ -1,97 +1,88 @@
-# rfq-skills
+# cwb-skills
 
-Model-independent skills for fastener and machined-part RFQs. The repository uses the common Agent Skills layout: each skill is a directory containing a `SKILL.md` with `name` and `description` frontmatter, plus the scripts and resources it needs. No plugin manifest, proprietary runtime, or model-specific path variable is required.
+Model-independent Agent Skills for the CWB / Runsun fastener and machined-part workflow. The GitHub repository is `cwb-dev/rfq-skills`; the recommended local folder name is `cwb-skills`.
 
-- **drawing-translate**: translates a non-Chinese engineering drawing (PDF, image, scan or fax) into Chinese **on the drawing itself**. Everything affecting manufacturing, inspection, process, cost or quotation is translated, including callouts, notes, dimension/tolerance language and title-block material/finish; numeric values, standard numbers and graphics stay unchanged. Scanned drawings are read with OCR. Uncertain translations go into a review spreadsheet (待审核清单) for a colleague to check.
-- **supplier-rfq**: splits a client RFQ into Chinese 询价单 for factories. One Excel file per product group, one sheet per drawing (the Chinese-annotated drawing plus plain-Chinese notes on what drives the price), and a WeChat/email message per factory.
-- **proforma-invoice**: creates a Runsun (CNY/VTB) or CWB (USD/ANEXT) Proforma Invoice from the customer's order email, contract/PO and approved `Price to Client` values, with total validation and XLS/PDF output.
-- **commercial-invoice**: creates a Commercial Invoice from one or more customer PIs and final packing lists from one or more factories. A line-level PI/factory allocation is required, and factory purchase prices must never be used as customer sales prices.
-- **packing-list**: creates a Packing List governed by actual factory packing-list quantities; contracts are comparison references only. Quantity variance over 5% by default produces a user-facing warning without changing actual values. PALLET NO. is displayed sequentially as `1, 2, 3 …`; Shipping Mark is independent and never communicates order. The user must explicitly confirm both before generation.
+Each skill has a `SKILL.md` with `name` and `description` frontmatter plus the scripts, templates and assets it needs. No plugin manifest or model-specific runtime is required.
 
-## Requirements
+## Included skills
 
-A language model alone does not load skills. Use an agent or client that can read `SKILL.md`, follow its instructions, run the required scripts, and inspect images/PDFs. The exact skill-discovery mechanism belongs to the host, not this repository.
+### Inquiry and quotation
 
-The three invoice skills require **Windows, PowerShell and desktop Microsoft Excel** because they automate the bundled `.xls` templates through Excel COM. PyMuPDF (`python -m pip install pymupdf`) is used to render and inspect the generated PDF. Excel and these scripts are not runnable on macOS/Linux as-is. The RFQ skills' Python dependencies are listed separately below.
+- **new-inquiry** — collect an RFQ email and attachments, create the inquiry folder, extract line items and update the tracker.
+- **mail-check** — incremental mail check, new-RFQ detection, tracker updates and daily digest.
+- **inquiry-status** — report new, chased, overdue and recently quoted inquiries.
+- **supplier-rfq** — split an RFQ into Chinese supplier inquiry workbooks with translated drawing sheets.
+- **drawing-translate** — translate engineering-drawing text into Chinese on the drawing, with OCR and review output.
+- **quote-compile** — compile factory quotes into cost/margin workbooks, comparisons, client forms and draft replies.
+- **standard-stock-price** — query GPYH and Taodingding options and build a dropdown-linked stock-price workbook.
+
+### Orders and shipment documents
+
+- **purchase-contract** — create a Chinese Runsun factory purchase contract, with RMB validation and optional drawing annexes.
+- **sample-order** — create a Chinese sampling agreement as DOCX plus combined PDF with drawing annexes.
+- **proforma-invoice** — create a Runsun or CWB Proforma Invoice from confirmed customer evidence.
+- **commercial-invoice** — create a Commercial Invoice with line-level PI/factory allocation.
+- **packing-list** — create a Packing List governed by actual packing data, with explicit pallet-number and shipping-mark confirmation.
+
+The public skills contain generic workflow instructions and fictitious examples. Private client profiles, mail accounts, network paths, order evidence, financial records and credentials are not part of this repository.
+
+## Platform support
+
+| Capability | Windows | macOS |
+|---|---|---|
+| RFQ collection, tracking and quotation workflows | Yes | Yes, with configured mail tools and shared storage |
+| Drawing translation, supplier RFQ, sample order and stock workbook scripts | Yes | Yes, with Python dependencies |
+| PI, CI, PL and purchase-contract generation | Yes, with PowerShell and desktop Excel | **Not natively**: the generators use Windows Excel COM |
+
+On macOS, use a Windows environment for the four Excel COM document generators. Mounting the shared drive alone does not port these scripts. See [HANDOFF.md](HANDOFF.md) for migration and shared-drive setup.
 
 ## Install
 
-Clone or download this repository, then either:
+Clone using the recommended folder name:
 
-- configure the host to discover skills from this repository's `skills/` directory; or
-- copy each required `skills/<skill-name>/` directory into the host's skills directory, preserving its full contents and sibling layout.
+```sh
+git clone git@github.com:cwb-dev/rfq-skills.git cwb-skills
+```
 
-`supplier-rfq` uses `drawing-translate`, so install both even if you primarily need supplier inquiry sheets. If the host does not support automatic skill discovery, provide the relevant `SKILL.md` and its directory to the agent as task context.
+Then either configure the agent to discover this repository's `skills/` directory, or copy/symlink each required `skills/<skill-name>` directory into the host's skills directory while preserving its contents.
 
-No plugin installation or marketplace step is needed. Update by pulling or replacing the repository and refreshing the host's skills if required.
+For hosts using `~/.agents/skills`:
 
-### WorkBuddy
+```sh
+mkdir -p ~/.agents/skills
+for skill in "$HOME/cwb-skills/skills"/*; do
+  ln -sfn "$skill" "$HOME/.agents/skills/$(basename "$skill")"
+done
+```
 
-The five skills use the common `SKILL.md` layout and include `agent_created: true` plus bilingual descriptions. Copy the required skill directories to `~/.workbuddy/skills/` and refresh WorkBuddy, or import a ZIP whose root contains `SKILL.md` and all referenced resources. WorkBuddy can use the invoice skills **on Windows only when desktop Excel and PowerShell are available to the agent**; merely importing the skill does not provide Excel or access to company files/mail.
-
-## First-use recommendation shown by the agent
-
-Each invoice skill instructs the agent to give the user a short recommended workflow on its first invocation in a conversation:
-
-- **PI**: provide the customer's PI-request email, the corresponding calculation file's `Price to Client` data, and the customer contract/PO. The email fixes the ordered parts and quantities; approved contract terms take precedence over a quote.
-- **CI**: provide every customer PI/sales contract, every factory's actual packing list and the shipment details. The agent first prepares a line-level CI↔PI↔factory allocation. Customer prices come from the customer documents, not factory purchase contracts.
-- **PL**: provide the actual factory packing list, matching customer PI/contract and shipment details. Actual packing-list quantities always govern; contract quantities are references only, and variance over 5% by default is reported to the user without altering the PL. Before generation, the agent shows sequential PALLET NO. values (`1, 2, 3 …`) and the independent shipping-mark text for the user to mark, correct and explicitly confirm. Shipping Mark never communicates pallet order. Missing weights or dimensions are obtained from the source rather than estimated.
-
-The agent then confirms the inputs, generates XLS + PDF, renders the PDF and checks totals and layout. No skill sends email automatically.
+`supplier-rfq` uses `drawing-translate`, so install both. Private client rules belong in the restored workspace, not in the public skill folders.
 
 ## Python dependencies
 
-Python 3.10+ is required. From the repository root, install the dependencies with:
+Python 3.10+ is recommended. From the repository root:
 
 ```sh
 python -m pip install --user -r skills/drawing-translate/requirements.txt
-```
-
-Use `python3` instead of `python` if that is how Python is exposed on your system. In mainland China, adding `-i https://pypi.tuna.tsinghua.edu.cn/simple` can speed up the download.
-
-To check the dependencies without installing anything:
-
-```sh
 python skills/drawing-translate/scripts/check_deps.py
 ```
 
-The agent must ask before installing missing packages. DengXian or SimHei is used when available on Windows; otherwise, the PDF built-in CJK font is used.
+Use `python3` if that is the executable name on the target machine. The sample-order generator additionally uses Pillow, and the stock workbook uses openpyxl. Install dependencies only with the user's approval.
 
 ## Use
 
-Ask the agent in natural language:
+Ask the agent naturally, for example:
 
-- `把这张图纸翻译成中文 <file>` → `drawing-translate`
-- `make 询价单 for RFQ 1234` → `supplier-rfq`, which also uses `drawing-translate` for every drawing
-- `按客户这封要 PI 的邮件和对应计算文件做 PI` → `proforma-invoice`
-- `按最终客户 PI 和实际装箱单做这次出货的 CI` → `commercial-invoice`
-- `按工厂实际箱单做 PL，并核对箱数、毛净重和体积` → `packing-list`
+- `收集这个 RFQ 并建立询价档案` → `new-inquiry`
+- `把图纸翻译成中文` → `drawing-translate`
+- `按产品类别制作供应商询价单` → `supplier-rfq`
+- `汇总工厂报价并填写客户报价表` → `quote-compile`
+- `按客户 PO 和工厂确认条款做采购合同` → `purchase-contract`
+- `按客户订单和计算文件做 PI` → `proforma-invoice`
+- `按最终 PI 和实际装箱单做 CI` → `commercial-invoice`
+- `按实际箱单做 PL` → `packing-list`
 
-Command examples in the skills are written from the repository root with ordinary relative paths such as `skills/drawing-translate/scripts/extract.py`. If the skills are installed elsewhere, replace that prefix with the actual skill directory. Placeholders in angle brackets, such as `<work>` and `<inquiry>`, must be replaced with real paths; they are not environment variables. Quote paths containing spaces.
+No skill should send email, move/flag mail, place orders or overwrite formal source documents without explicit authorization.
 
-## Layout
+## Restore a complete private workflow
 
-```text
-skills/
-  drawing-translate/
-    SKILL.md
-    requirements.txt
-    scripts/
-  supplier-rfq/
-    SKILL.md
-    example_notes.json
-    scripts/
-    templates/
-  proforma-invoice/
-    SKILL.md
-    make_pi.ps1
-    templates/
-  commercial-invoice/
-    SKILL.md
-    make_ci.ps1
-    templates/
-  packing-list/
-    SKILL.md
-    make_pl.ps1
-    templates/
-```
+The public repository is only the portable skill layer. A complete migration also needs the separately transferred private ZIP, direct access to the underlying shared file service, and locally re-entered credentials. Follow [HANDOFF.md](HANDOFF.md); do not upload the private ZIP or its contents back to this repository.
